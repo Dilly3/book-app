@@ -49,7 +49,7 @@ func (h *Handler) CreateBook() gin.HandlerFunc {
 			return
 		}
 		c.JSON(200, utils.SuccessResponse{
-			Code:    http.StatusOK,
+			Code:    http.StatusCreated,
 			Object:  newBook,
 			Message: "Book created successfully",
 		})
@@ -64,10 +64,10 @@ func (h *Handler) GetBook() gin.HandlerFunc {
 
 		var book *models.Book
 
-		objectId, _ := primitive.ObjectIDFromHex(bookId)
+		objectId, _ := utils.GetPrimitiveObjectId(bookId)
 
 		book, err := h.store.GetBook(objectId)
-		if err != "" {
+		if err != nil {
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error getting book",
@@ -118,6 +118,16 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 			})
 			return
 		}
+		updatedBook, errStr := h.store.GetBook(objectId)
+		if errStr != nil {
+			c.JSON(500, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   "Error getting book",
+				Message: fmt.Sprint(err),
+			})
+			return
+		}
+
 		c.JSON(200, utils.SuccessResponse{
 			Code:    http.StatusOK,
 			Object:  updatedBook,
@@ -141,6 +151,38 @@ func (h *Handler) GetAllBooks() gin.HandlerFunc {
 			Code:    http.StatusOK,
 			Object:  books,
 			Message: "Books retrieved successfully",
+		})
+
+	}
+}
+
+func (h *Handler) DeleteBook() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		bookId := c.Param("_id")
+
+		objectId, _ := utils.GetPrimitiveObjectId(bookId)
+		book, err := h.store.GetBook(objectId)
+		if err != "" {
+			c.JSON(500, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   "Error getting book",
+				Message: fmt.Sprint(err),
+			})
+			return
+		}
+		err2 := h.store.DeleteBook(objectId)
+		if err2 != nil {
+			c.JSON(500, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   "Error deleting book",
+				Message: fmt.Sprint(err),
+			})
+			return
+		}
+		c.JSON(200, utils.SuccessResponse{
+			Code:    http.StatusOK,
+			Message: fmt.Sprintf("%s deleted successfully", *book.Title),
 		})
 
 	}

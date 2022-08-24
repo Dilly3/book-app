@@ -27,14 +27,11 @@ func MountServer() *gin.Engine {
 	mongodb.Client = controllers.DBinstance()
 	handler := new(Handler)
 	handler.store = mongodb
-	router.POST("/books/create", handler.CreateBook())
-	router.GET("/books/:book_id", handler.GetBook())
-	router.PATCH("/editbook/:book_id", handler.UpdateBook())
-	router.GET("/getallbooks", handler.GetAllBooks())
+	router.POST("/books/createbook", handler.CreateBook())
+	router.GET("/books/getbook/:book_id", handler.GetBook())
+	router.PATCH("/books/editbook/:book_id", handler.UpdateBook())
+	router.GET("/books/getallbooks", handler.GetAllBooks())
+	router.DELETE("/books/deletebook/:_id", handler.DeleteBook())
 
 	return router
 }
-
-//
-// incomingRoutes.DELETE("books/:book_id", controllers.DeleteBook())
-// incomingRoutes.GET("books", controllers.GetAllBooks())
