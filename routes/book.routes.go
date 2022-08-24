@@ -125,3 +125,23 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 		})
 	}
 }
+
+func (h *Handler) GetAllBooks() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		books, err := h.store.GetAllBooks()
+		if err != nil {
+			c.JSON(500, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   "Error getting all books",
+				Message: fmt.Sprint(err),
+			})
+			return
+		}
+		c.JSON(200, utils.SuccessResponse{
+			Code:    http.StatusOK,
+			Object:  books,
+			Message: "Books retrieved successfully",
+		})
+
+	}
+}
