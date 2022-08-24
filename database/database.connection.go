@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/dilly3/book-app/models"
+	utils "github.com/dilly3/book-app/utils"
 	"github.com/go-playground/validator"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,7 +34,7 @@ func (m Mongo) AddBook(book *models.Book) (*models.Book, error) {
 
 	book.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	book.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	book.ID = primitive.NewObjectID()
+	book.ID = utils.GenerateObjectId()
 
 	_, insertErr := m.col(models.BOOK_COLLECTION).InsertOne(ctx, book)
 	if insertErr != nil {
@@ -43,7 +43,7 @@ func (m Mongo) AddBook(book *models.Book) (*models.Book, error) {
 	return book, nil
 }
 
-func (m Mongo) GetBook(id primitive.ObjectID) (book *models.Book, err string) {
+func (m Mongo) GetBook(id primitive.ObjectID) (book *models.Book, err interface{}) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 	filterQuery := bson.M{
@@ -53,7 +53,7 @@ func (m Mongo) GetBook(id primitive.ObjectID) (book *models.Book, err string) {
 	if errdB != nil {
 		return nil, fmt.Sprintf("error while getting book : %s", errdB.Error())
 	}
-	return book, ""
+	return book, nil
 }
 
 func (m Mongo) UpdateBook(id primitive.ObjectID, book *models.Book) (bk *models.Book, err error) {
@@ -104,4 +104,17 @@ func (m Mongo) GetAllBooks() (books []*models.Book, err error) {
 		return nil, err
 	}
 	return books, nil
+}
+
+func (m Mongo) DeleteBook(id primitive.ObjectID) (err error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+	filter := bson.M{
+		"_id": id,
+	}
+	_, err = m.col(models.BOOK_COLLECTION).DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+	return nil
 }
