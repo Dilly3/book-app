@@ -2,8 +2,12 @@ package database
 
 import (
 	"github.com/dilly3/book-app/models"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Datastore interface {
-	CreateBook(book *models.Book) (*models.Book, error)
+	AddBook(book *models.Book) (*models.Book, error)
+	GetBook(id primitive.ObjectID) (book *models.Book, err string)
+	UpdateBook(id primitive.ObjectID, book *models.Book) (bk *models.Book, err error)
+	GetAllBooks() (books []*models.Book, err error)
 }
