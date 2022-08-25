@@ -11,23 +11,19 @@ import (
 	"github.com/dilly3/book-app/models"
 	utils "github.com/dilly3/book-app/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
 type Handle struct {
-	store  database.Datastore
+	store  database.DataStore
 	Logger *zap.Logger
 }
 
-func NewHandle() *Handle {
-	mongodb := database.Mongo{
-		Validate: validator.New(),
-		Client:   database.DBinstance(),
-	}
+func NewHandle(databaseFactory func() database.DataStore) *Handle {
+	db := databaseFactory()
 	return &Handle{
-		store:  mongodb,
+		store:  db,
 		Logger: zap.NewExample(),
 	}
 }

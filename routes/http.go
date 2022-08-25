@@ -1,16 +1,22 @@
 package routes
 
 import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	utils "github.com/dilly3/book-app/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"log"
-	"net/http"
-	"time"
 )
 
-func MountGinHandler() *gin.Engine {
+func MountGinHandler(handler *Handle) *gin.Engine {
 
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -22,8 +28,6 @@ func MountGinHandler() *gin.Engine {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-
-	handler := NewHandle()
 
 	router.POST("/books/createbook", handler.CreateBook())
 	router.GET("/books/getbook/:book_id", handler.GetBook())
@@ -44,4 +48,18 @@ func StartServer(r *gin.Engine) *http.Server {
 		Handler: r,
 	}
 	return server
+}
+
+func GracefulShutdown(done chan error, server *http.Server) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+
+	fmt.Println("\nshutting down server")
+	time.Sleep(time.Second * 3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	fmt.Println("bye!!")
+	done <- server.Shutdown(ctx)
+
 }

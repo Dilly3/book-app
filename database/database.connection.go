@@ -23,6 +23,12 @@ type Mongo struct {
 	Client   *mongo.Client
 }
 
+func NewMongoDb() DataStore {
+	return &Mongo{
+		Validate: validator.New(),
+		Client:   DBinstance(),
+	}
+}
 func (m Mongo) col(collectionName string) *mongo.Collection {
 	return m.Client.Database("bookDB").Collection(collectionName)
 }

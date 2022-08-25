@@ -5,7 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Datastore interface {
+type DataStore interface {
 	AddBook(book *models.Book) (*models.Book, error)
 	GetBook(id primitive.ObjectID) (book *models.Book, err error)
 	UpdateBook(id primitive.ObjectID, book *models.Book) (bk *models.Book, err error)
