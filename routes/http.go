@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func MountRouter() *gin.Engine {
+func MountGinHandler() *gin.Engine {
 
 	router := gin.New()
 	router.Use(gin.Logger())

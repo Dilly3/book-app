@@ -14,8 +14,8 @@ import (
 )
 
 func main() {
-	router := routes.MountRouter()
-	server := routes.StartServer(router)
+	ginHandler := routes.MountGinHandler()
+	server := routes.StartServer(ginHandler)
 	done := make(chan error, 1)
 
 	go func() {
