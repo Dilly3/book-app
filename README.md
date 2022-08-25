@@ -1,3 +1,3 @@
-# A book store apllication with Golang, Gin and MongoDb
-# Exploring CRUD by building a simple book store app
+# A book store application with Golang, Gin and MongoDb
+# CRUD Restful API 
 
