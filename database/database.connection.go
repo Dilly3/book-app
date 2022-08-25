@@ -34,7 +34,7 @@ func DBinstance() *mongo.Client {
 	}
 	MongoDB := os.Getenv("MONGODB_URL")
 	if MongoDB == "" || len(MongoDB) < 1 {
-		MongoDB = "mongodb://localhost:27017/book-DB"
+		MongoDB = "mongodb://localhost:27017/bookDb"
 	}
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDB))
 	if err != nil {
