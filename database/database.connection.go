@@ -33,7 +33,9 @@ func DBinstance() *mongo.Client {
 		log.Fatal("Error loading .env file")
 	}
 	MongoDB := os.Getenv("MONGODB_URL")
-
+	if MongoDB == "" || len(MongoDB) < 1 {
+		MongoDB = "mongodb://localhost:27017/book-DB"
+	}
 	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDB))
 	if err != nil {
 		log.Fatal(err)

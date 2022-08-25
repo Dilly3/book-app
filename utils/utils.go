@@ -25,7 +25,7 @@ func GenerateObjectId() primitive.ObjectID {
 }
 func GetPortFromEnv() string {
 	port := os.Getenv("PORT")
-	if port == "" {
+	if port == "" || len(port) < 1 {
 		port = "8080"
 	}
 	return port
