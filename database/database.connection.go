@@ -3,8 +3,14 @@ package database
 import (
 	"context"
 	"fmt"
+	"log"
 
+	"os"
 	"time"
+
+	"github.com/joho/godotenv"
+
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/dilly3/book-app/models"
 	utils "github.com/dilly3/book-app/utils"
@@ -22,6 +28,31 @@ type Mongo struct {
 func (m Mongo) col(collectionName string) *mongo.Collection {
 	return m.Client.Database("bookDB").Collection(collectionName)
 }
+
+func DBinstance() *mongo.Client {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	MongoDB := os.Getenv("MONGODB_URL")
+
+	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDB))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDB")
+	return client
+}
+
 func (m Mongo) AddBook(book *models.Book) (*models.Book, error) {
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)

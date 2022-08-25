@@ -1,10 +1,8 @@
 package routes
 
 import (
-	"time"
-
-	controllers "github.com/dilly3/book-app/controller"
 	"github.com/dilly3/book-app/database"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -24,7 +22,7 @@ func MountServer() *gin.Engine {
 	}))
 	mongodb := database.Mongo{}
 	mongodb.Validate = validator.New()
-	mongodb.Client = controllers.DBinstance()
+	mongodb.Client = database.DBinstance()
 	handler := new(Handler)
 	handler.store = mongodb
 	router.POST("/books/createbook", handler.CreateBook())
