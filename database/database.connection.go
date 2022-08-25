@@ -112,8 +112,7 @@ func (m Mongo) UpdateBook(id primitive.ObjectID, book *models.Book) (bk *models.
 	updateQuery := bson.M{
 		"$set": updateObj,
 	}
-	var bookCollection *mongo.Collection = m.Client.Database("bookDB").Collection(models.BOOK_COLLECTION)
-	_, err = bookCollection.UpdateOne(ctx, filter, updateQuery)
+	_ = m.col(models.BOOK_COLLECTION).FindOneAndUpdate(ctx, filter, updateQuery)
 	if err != nil {
 		return nil, err
 	}
