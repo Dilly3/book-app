@@ -11,12 +11,11 @@ import (
 	"time"
 
 	"github.com/dilly3/book-app/routes"
-	utils "github.com/dilly3/book-app/utils"
 )
 
 func main() {
 	router := routes.MountRouter()
-	server := utils.StartServer(router)
+	server := routes.StartServer(router)
 	done := make(chan error, 1)
 
 	go func() {

@@ -1,13 +1,8 @@
 package util
 
 import (
-	"log"
-	"net/http"
-	"os"
-
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"os"
 )
 
 type ErrorResponse struct {
@@ -34,16 +29,4 @@ func GetPortFromEnv() string {
 		port = "8080"
 	}
 	return port
-}
-
-func StartServer(r *gin.Engine) *http.Server {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	server := &http.Server{
-		Addr:    "127.0.0.1" + GetPortFromEnv(),
-		Handler: r,
-	}
-	return server
 }
