@@ -3,7 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/dilly3/book-app/database"
@@ -20,7 +20,7 @@ type Handler struct {
 func (h *Handler) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var book = new(models.Book)
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
@@ -89,7 +89,7 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 
 		bookId := c.Param("book_id")
 		var book models.Book
-		body, err := ioutil.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
@@ -109,7 +109,7 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 		}
 
 		objectId, _ := primitive.ObjectIDFromHex(bookId)
-		updatedBook, err := h.store.UpdateBook(objectId, &book)
+		_, err = h.store.UpdateBook(objectId, &book)
 		if err != nil {
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
