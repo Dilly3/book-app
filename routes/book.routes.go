@@ -4,24 +4,39 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/dilly3/book-app/database"
 	"github.com/dilly3/book-app/models"
 	utils "github.com/dilly3/book-app/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
-	store database.Datastore
+	store  database.Datastore
+	Logger *zap.Logger
 }
 
+func NewHandler() *Handler {
+	mongodb := database.Mongo{
+		Validate: validator.New(),
+		Client:   database.DBinstance(),
+	}
+	return &Handler{
+		store:  mongodb,
+		Logger: zap.NewExample(),
+	}
+}
 func (h *Handler) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var book = new(models.Book)
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
+			log.Println(err)
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error reading request body",
@@ -31,6 +46,7 @@ func (h *Handler) CreateBook() gin.HandlerFunc {
 		}
 		err = json.Unmarshal(body, &book)
 		if err != nil {
+			log.Println(err)
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error unmarshalling request body",
@@ -41,6 +57,7 @@ func (h *Handler) CreateBook() gin.HandlerFunc {
 
 		newBook, err := h.store.AddBook(book)
 		if err != nil {
+			log.Println(err)
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error creating book",
@@ -68,6 +85,7 @@ func (h *Handler) GetBook() gin.HandlerFunc {
 
 		book, err := h.store.GetBook(objectId)
 		if err != nil {
+			h.Logger.Info("Error getting book", zap.Error(err.(error)))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error getting book",
@@ -91,6 +109,7 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 		var book models.Book
 		body, err := io.ReadAll(c.Request.Body)
 		if err != nil {
+			log.Println(err)
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error reading request body",
@@ -100,6 +119,7 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 		}
 		err = json.Unmarshal(body, &book)
 		if err != nil {
+			h.Logger.Info("Error unmarshalling request body", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error unmarshalling request body",
@@ -111,6 +131,7 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 		objectId, _ := primitive.ObjectIDFromHex(bookId)
 		_, err = h.store.UpdateBook(objectId, &book)
 		if err != nil {
+			h.Logger.Info("Error updating book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error updating book",
@@ -120,6 +141,7 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 		}
 		updatedBook, errStr := h.store.GetBook(objectId)
 		if errStr != nil {
+			h.Logger.Info("Error getting book", zap.Error(errStr))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error getting book",
@@ -140,6 +162,7 @@ func (h *Handler) GetAllBooks() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		books, err := h.store.GetAllBooks()
 		if err != nil {
+			h.Logger.Info("Error getting all books", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error getting all books",
@@ -163,7 +186,8 @@ func (h *Handler) DeleteBook() gin.HandlerFunc {
 
 		objectId, _ := utils.GetPrimitiveObjectId(bookId)
 		book, err := h.store.GetBook(objectId)
-		if err != "" {
+		if err != nil {
+			h.Logger.Info("Error getting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error getting book",
@@ -173,6 +197,7 @@ func (h *Handler) DeleteBook() gin.HandlerFunc {
 		}
 		err2 := h.store.DeleteBook(objectId)
 		if err2 != nil {
+			h.Logger.Info("Error deleting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error deleting book",
