@@ -16,22 +16,22 @@ import (
 	"go.uber.org/zap"
 )
 
-type Handler struct {
+type Handle struct {
 	store  database.Datastore
 	Logger *zap.Logger
 }
 
-func NewHandler() *Handler {
+func NewHandle() *Handle {
 	mongodb := database.Mongo{
 		Validate: validator.New(),
 		Client:   database.DBinstance(),
 	}
-	return &Handler{
+	return &Handle{
 		store:  mongodb,
 		Logger: zap.NewExample(),
 	}
 }
-func (h *Handler) CreateBook() gin.HandlerFunc {
+func (h *Handle) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var book = new(models.Book)
 		body, err := io.ReadAll(c.Request.Body)
@@ -74,7 +74,7 @@ func (h *Handler) CreateBook() gin.HandlerFunc {
 	}
 }
 
-func (h *Handler) GetBook() gin.HandlerFunc {
+func (h *Handle) GetBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		bookId := c.Param("book_id")
@@ -102,7 +102,7 @@ func (h *Handler) GetBook() gin.HandlerFunc {
 
 }
 
-func (h *Handler) UpdateBook() gin.HandlerFunc {
+func (h *Handle) UpdateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		bookId := c.Param("book_id")
@@ -158,7 +158,7 @@ func (h *Handler) UpdateBook() gin.HandlerFunc {
 	}
 }
 
-func (h *Handler) GetAllBooks() gin.HandlerFunc {
+func (h *Handle) GetAllBooks() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		books, err := h.store.GetAllBooks()
 		if err != nil {
@@ -179,7 +179,7 @@ func (h *Handler) GetAllBooks() gin.HandlerFunc {
 	}
 }
 
-func (h *Handler) DeleteBook() gin.HandlerFunc {
+func (h *Handle) DeleteBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		bookId := c.Param("_id")

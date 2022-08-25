@@ -23,7 +23,7 @@ func MountGinHandler() *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	handler := NewHandler()
+	handler := NewHandle()
 
 	router.POST("/books/createbook", handler.CreateBook())
 	router.GET("/books/getbook/:book_id", handler.GetBook())
