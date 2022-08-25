@@ -30,7 +30,7 @@ func NewHandle(databaseFactory func() database.DataStore) *Handle {
 func (h *Handle) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var book = new(models.Book)
-		body, err := io.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(models.MAX_SIZE)))
 		if err != nil {
 			log.Println(err)
 			c.JSON(500, utils.ErrorResponse{
@@ -103,7 +103,7 @@ func (h *Handle) UpdateBook() gin.HandlerFunc {
 
 		bookId := c.Param("book_id")
 		var book models.Book
-		body, err := io.ReadAll(c.Request.Body)
+		body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(models.MAX_SIZE)))
 		if err != nil {
 			log.Println(err)
 			c.JSON(500, utils.ErrorResponse{
