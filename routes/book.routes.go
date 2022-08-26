@@ -11,7 +11,6 @@ import (
 	"github.com/dilly3/book-app/models"
 	utils "github.com/dilly3/book-app/utils"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
 )
 
@@ -124,7 +123,7 @@ func (h *Handle) UpdateBook() gin.HandlerFunc {
 			return
 		}
 
-		objectId, _ := primitive.ObjectIDFromHex(bookId)
+		objectId, _ := utils.GetPrimitiveObjectId(bookId)
 		_, err = h.store.UpdateBook(objectId, &book)
 		if err != nil {
 			h.Logger.Info("Error updating book", zap.Error(err))
