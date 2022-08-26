@@ -1,13 +1,13 @@
 package main
 
 import (
-	"log"
-
 	"github.com/dilly3/book-app/database"
 	"github.com/dilly3/book-app/routes"
+	"log"
 )
 
 func main() {
+
 	ginHandler := routes.MountGinHandler(routes.NewHandle(database.NewMongoDb))
 	server := routes.StartServer(ginHandler)
 	done := make(chan error, 1)

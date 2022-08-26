@@ -1,8 +1,13 @@
 package util
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"crypto/rand"
+	"fmt"
+	"log"
+	"math/big"
 	"os"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ErrorResponse struct {
@@ -29,4 +34,25 @@ func GetPortFromEnv() string {
 		port = "8080"
 	}
 	return port
+}
+func GenerateRandomID() string {
+	b := make([]byte, 9)
+
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return fmt.Sprintf("%s%x", "BK631-", b)
+}
+func RandomBigInt() int64 {
+	bign, err1 := rand.Int(rand.Reader, big.NewInt(5000000))
+	bigx, err := rand.Int(rand.Reader, big.NewInt(70000))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err1 != nil {
+		log.Fatal(err)
+	}
+	return bign.Int64() + bigx.Int64()
 }

@@ -57,9 +57,17 @@ func GracefulShutdown(done chan error, server *http.Server) {
 
 	fmt.Println("\nshutting down server")
 	time.Sleep(time.Second * 3)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	fmt.Println("bye!!")
+	fmt.Print("B")
+	time.Sleep(time.Second * 1)
+	fmt.Print("Y")
+	time.Sleep(time.Second * 1)
+	fmt.Print("E")
+	time.Sleep(time.Second * 1)
+	fmt.Print(" ")
+	time.Sleep(time.Second * 1)
+	fmt.Print("\n")
 	done <- server.Shutdown(ctx)
 
 }

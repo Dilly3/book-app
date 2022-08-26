@@ -21,6 +21,7 @@ type Handle struct {
 
 func NewHandle(databaseFactory func() database.DataStore) *Handle {
 	db := databaseFactory()
+
 	return &Handle{
 		store:  db,
 		Logger: zap.NewExample(),
@@ -45,6 +46,25 @@ func (h *Handle) CreateBook() gin.HandlerFunc {
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error unmarshalling request body",
+				Message: fmt.Sprint(err),
+			})
+			return
+		}
+		ok, err := h.store.IsBookInStore(*book.Title, *book.Author)
+		if err != nil {
+			h.Logger.Info("Error validating book name", zap.Error(err))
+			c.JSON(500, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   "Error validating book name",
+				Message: fmt.Sprint(err),
+			})
+			return
+		}
+
+		if ok {
+			c.JSON(500, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   "Book name already exists",
 				Message: fmt.Sprint(err),
 			})
 			return
@@ -76,11 +96,11 @@ func (h *Handle) GetBook() gin.HandlerFunc {
 
 		var book *models.Book
 
-		objectId, _ := utils.GetPrimitiveObjectId(bookId)
+		//objectId, _ := utils.GetPrimitiveObjectId(bookId)
 
-		book, err := h.store.GetBook(objectId)
+		book, err := h.store.GetBook(bookId)
 		if err != nil {
-			h.Logger.Info("Error getting book", zap.Error(err.(error)))
+			h.Logger.Info("Error getting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
 				Code:    http.StatusInternalServerError,
 				Error:   "Error getting book",
@@ -123,8 +143,8 @@ func (h *Handle) UpdateBook() gin.HandlerFunc {
 			return
 		}
 
-		objectId, _ := utils.GetPrimitiveObjectId(bookId)
-		_, err = h.store.UpdateBook(objectId, &book)
+		//objectId, _ := utils.GetPrimitiveObjectId(bookId)
+		_, err = h.store.UpdateBook(bookId, &book)
 		if err != nil {
 			h.Logger.Info("Error updating book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
@@ -134,7 +154,7 @@ func (h *Handle) UpdateBook() gin.HandlerFunc {
 			})
 			return
 		}
-		updatedBook, errStr := h.store.GetBook(objectId)
+		updatedBook, errStr := h.store.GetBook(bookId)
 		if errStr != nil {
 			h.Logger.Info("Error getting book", zap.Error(errStr))
 			c.JSON(500, utils.ErrorResponse{
@@ -179,8 +199,8 @@ func (h *Handle) DeleteBook() gin.HandlerFunc {
 
 		bookId := c.Param("_id")
 
-		objectId, _ := utils.GetPrimitiveObjectId(bookId)
-		book, err := h.store.GetBook(objectId)
+		//objectId, _ := utils.GetPrimitiveObjectId(bookId)
+		book, err := h.store.GetBook(bookId)
 		if err != nil {
 			h.Logger.Info("Error getting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
@@ -190,7 +210,7 @@ func (h *Handle) DeleteBook() gin.HandlerFunc {
 			})
 			return
 		}
-		err2 := h.store.DeleteBook(objectId)
+		err2 := h.store.DeleteBook(bookId)
 		if err2 != nil {
 			h.Logger.Info("Error deleting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{

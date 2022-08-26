@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/dilly3/book-app/models"
-	util "github.com/dilly3/book-app/utils"
+	utils "github.com/dilly3/book-app/utils"
 	"github.com/go-playground/validator"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	_ "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -65,7 +65,7 @@ func (m Mongo) AddBook(book *models.Book) (*models.Book, error) {
 
 	book.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 	book.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	book.ID = util.GenerateObjectId()
+	book.ID = utils.GenerateRandomID()
 
 	_, insertErr := m.col(models.BOOK_COLLECTION).InsertOne(ctx, book)
 	if insertErr != nil {
@@ -74,7 +74,7 @@ func (m Mongo) AddBook(book *models.Book) (*models.Book, error) {
 	return book, nil
 }
 
-func (m Mongo) GetBook(id primitive.ObjectID) (book *models.Book, err error) {
+func (m Mongo) GetBook(id string) (book *models.Book, err error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 	filterQuery := bson.M{
@@ -87,7 +87,24 @@ func (m Mongo) GetBook(id primitive.ObjectID) (book *models.Book, err error) {
 	return book, nil
 }
 
-func (m Mongo) UpdateBook(id primitive.ObjectID, book *models.Book) (bk *models.Book, err error) {
+func (m Mongo) IsBookInStore(name string, author string) (bool, error) {
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+	filter := bson.M{
+		"title":  name,
+		"author": author,
+	}
+	count, err := m.col(models.BOOK_COLLECTION).CountDocuments(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (m Mongo) UpdateBook(id string, book *models.Book) (bk *models.Book, err error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 	filter := bson.M{
@@ -136,7 +153,7 @@ func (m Mongo) GetAllBooks() (books []*models.Book, err error) {
 	return books, nil
 }
 
-func (m Mongo) DeleteBook(id primitive.ObjectID) (err error) {
+func (m Mongo) DeleteBook(id string) (err error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 	filter := bson.M{
