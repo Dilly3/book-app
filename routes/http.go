@@ -33,6 +33,7 @@ func MountGinHandler(handler *Handle) *gin.Engine {
 	router.GET("/books/getbook/:book_id", handler.GetBook())
 	router.PATCH("/books/editbook/:book_id", handler.UpdateBook())
 	router.GET("/books/getallbooks", handler.GetAllBooks())
+	router.GET("/", handler.Home())
 	router.DELETE("/books/deletebook/:_id", handler.DeleteBook())
 
 	return router
@@ -56,7 +57,7 @@ func GracefulShutdown(done chan error, server *http.Server) {
 	<-c
 
 	fmt.Println("\nshutting down server")
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 1)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	fmt.Print("B")
@@ -64,6 +65,8 @@ func GracefulShutdown(done chan error, server *http.Server) {
 	fmt.Print("Y")
 	time.Sleep(time.Second * 1)
 	fmt.Print("E")
+	time.Sleep(time.Second * 1)
+	fmt.Print("!")
 	time.Sleep(time.Second * 1)
 	fmt.Print(" ")
 	time.Sleep(time.Second * 1)

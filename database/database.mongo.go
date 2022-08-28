@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 
-	"github.com/joho/godotenv"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 
 	"github.com/dilly3/book-app/models"
 	utils "github.com/dilly3/book-app/utils"
@@ -21,6 +23,7 @@ import (
 type Mongo struct {
 	Validate *validator.Validate
 	Client   *mongo.Client
+	RWMutex  *sync.RWMutex
 }
 
 func (m Mongo) col(collectionName string) *mongo.Collection {
@@ -129,7 +132,9 @@ func (m Mongo) UpdateBook(id string, book *models.Book) (bk *models.Book, err er
 	updateQuery := bson.M{
 		"$set": updateObj,
 	}
+	m.RWMutex.Lock()
 	_ = m.col(models.BOOK_COLLECTION).FindOneAndUpdate(ctx, filter, updateQuery)
+	m.RWMutex.Unlock()
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,12 @@ func NewHandle(databaseFactory func() database.DataStore) *Handle {
 		Logger: zap.NewExample(),
 	}
 }
+
+func (h *Handle) Home() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.File("templates/index2.htm")
+	}
+}
 func (h *Handle) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var book = new(models.Book)
