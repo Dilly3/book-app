@@ -2,9 +2,19 @@ package database
 
 import "github.com/go-playground/validator"
 
-func NewMongoDb() DataStore {
-	return &Mongo{
-		Validate: validator.New(),
-		Client:   MongoDBinstance(),
+var Mongo = MongoDBinstance()
+var Validate = validator.New()
+
+func NewMongoBK() DataStore {
+	return &MongoBK{
+		Validate: Validate,
+		Client:   Mongo,
+	}
+}
+
+func NewMongoUSR() UserStore {
+	return &MongoUSR{
+		Validate: Validate,
+		Client:   Mongo,
 	}
 }

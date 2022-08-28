@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	utils "github.com/dilly3/book-app/utils"
+	utils "github.com/dilly3/book-rental/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -35,17 +35,19 @@ func MountGinHandler(handler *Handle) *gin.Engine {
 	router.GET("/books/getallbooks", handler.GetAllBooks())
 	router.GET("/", handler.Home())
 	router.DELETE("/books/deletebook/:_id", handler.DeleteBook())
+	router.POST("/books/signup", handler.UserSignUp())
 
 	return router
 }
 
 func StartServer(r *gin.Engine) *http.Server {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	port := utils.GetPortFromEnv()
+	if port == "" {
+		port = ":8080"
 	}
+
 	server := &http.Server{
-		Addr:    "127.0.0.1" + utils.GetPortFromEnv(),
+		Addr:    "127.0.0.1" + port,
 		Handler: r,
 	}
 	return server
@@ -57,19 +59,19 @@ func GracefulShutdown(done chan error, server *http.Server) {
 	<-c
 
 	fmt.Println("\nshutting down server")
-	time.Sleep(time.Second * 1)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	time.Sleep(time.Millisecond * 500)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*6)
 	defer cancel()
 	fmt.Print("B")
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 500)
 	fmt.Print("Y")
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 500)
 	fmt.Print("E")
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 500)
 	fmt.Print("!")
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 500)
 	fmt.Print(" ")
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 500)
 	fmt.Print("\n")
 	done <- server.Shutdown(ctx)
 

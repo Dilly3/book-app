@@ -6,8 +6,11 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"time"
 
+	"github.com/dilly3/book-rental/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	bcrypto "golang.org/x/crypto/bcrypt"
 )
 
 type ErrorResponse struct {
@@ -45,6 +48,16 @@ func GenerateRandomID() string {
 
 	return fmt.Sprintf("%s%x", "BK631-", b)
 }
+func GenerateRandomIDUSR() string {
+	b := make([]byte, 9)
+
+	_, err := rand.Read(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return fmt.Sprintf("%s%x", "USR-", b)
+}
 func RandomBigInt() int64 {
 	bign, err1 := rand.Int(rand.Reader, big.NewInt(5000000))
 	bigx, err := rand.Int(rand.Reader, big.NewInt(70000))
@@ -55,4 +68,22 @@ func RandomBigInt() int64 {
 		log.Fatal(err)
 	}
 	return bign.Int64() + bigx.Int64()
+}
+
+func GetPresentTime() time.Time {
+	time, err := time.Parse(time.RFC1123, time.Now().Format(time.RFC1123))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return time
+}
+
+func EncryptPassword(password *string) *string {
+	byte, err := bcrypto.GenerateFromPassword([]byte(*password), models.DEFAULT_COST)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pass := string(byte)
+	return &pass
+
 }

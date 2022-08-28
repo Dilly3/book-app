@@ -1,14 +1,21 @@
 package main
 
 import (
-	"github.com/dilly3/book-app/database"
-	"github.com/dilly3/book-app/routes"
 	"log"
+	"time"
+
+	"github.com/dilly3/book-rental/database"
+	"github.com/dilly3/book-rental/routes"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-
-	ginHandler := routes.MountGinHandler(routes.NewHandle(database.NewMongoDb))
+	err := godotenv.Load(".env")
+	time.Sleep(time.Millisecond * 1500)
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	ginHandler := routes.MountGinHandler(routes.NewHandle(database.NewMongoUSR, database.NewMongoBK))
 	server := routes.StartServer(ginHandler)
 	done := make(chan error, 1)
 

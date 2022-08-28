@@ -2,29 +2,33 @@ package routes
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
-	"github.com/dilly3/book-app/database"
-	"github.com/dilly3/book-app/models"
-	utils "github.com/dilly3/book-app/utils"
+	"github.com/dilly3/book-rental/database"
+	"github.com/dilly3/book-rental/models"
+	utils "github.com/dilly3/book-rental/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 type Handle struct {
-	store  database.DataStore
-	Logger *zap.Logger
+	storeBK  database.DataStore
+	storeUSR database.UserStore
+	Logger   *zap.Logger
 }
 
-func NewHandle(databaseFactory func() database.DataStore) *Handle {
-	db := databaseFactory()
+func NewHandle(databaseFactory func() database.UserStore, databaseFactory2 func() database.DataStore) *Handle {
+	db := databaseFactory2()
+	db2 := databaseFactory()
 
 	return &Handle{
-		store:  db,
-		Logger: zap.NewExample(),
+		storeBK:  db,
+		storeUSR: db2,
+		Logger:   zap.NewExample(),
 	}
 }
 
@@ -33,6 +37,82 @@ func (h *Handle) Home() gin.HandlerFunc {
 		c.File("templates/index2.htm")
 	}
 }
+
+func (h *Handle) UserSignUp() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		//get request body
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			errorMessage := "error reading request body"
+			h.Logger.Fatal(errorMessage, zap.Error(err))
+			c.JSON(http.StatusInternalServerError, utils.ErrorResponse{
+				Code:    http.StatusBadRequest,
+				Error:   fmt.Sprintf("%s", errors.New(errorMessage)),
+				Message: errorMessage,
+			})
+			return
+		}
+		defer c.Request.Body.Close()
+
+		var user *models.User
+		err = json.Unmarshal(body, &user)
+		if err != nil {
+			errorMessage := "failed to unmarshall user registration object"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusBadRequest,
+				Error:   fmt.Sprintf("%s", errors.New(errorMessage)),
+				Message: errorMessage,
+			})
+			return
+		}
+
+		if user.Email == "" || user.UserName == "" || user.Password == nil {
+			errorMessage := "empty request object"
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusBadRequest,
+				Error:   fmt.Sprintf("%s\n", errors.New(errorMessage)),
+				Message: errorMessage,
+			})
+			return
+
+		}
+		user.CreatedAt = utils.GetPresentTime()
+		user.UpdatedAt = utils.GetPresentTime()
+		user.Role = models.LIBRARY_USER
+		user.Password = utils.EncryptPassword(user.Password)
+
+		//check if valid new user
+		ok := h.storeUSR.CheckUserByEmail(user.Email)
+		if ok {
+			errorMessage := "user already exists"
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+		user, err = h.storeUSR.CreateUser(user)
+		if err != nil {
+			errorMessage := "error creating user"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+		c.JSON(http.StatusOK, utils.SuccessResponse{
+			Code:    http.StatusOK,
+			Object:  user,
+			Message: "User created successfully",
+		})
+
+	}
+}
+
 func (h *Handle) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var book = new(models.Book)
@@ -46,6 +126,7 @@ func (h *Handle) CreateBook() gin.HandlerFunc {
 			})
 			return
 		}
+
 		err = json.Unmarshal(body, &book)
 		if err != nil {
 			log.Println(err)
@@ -56,7 +137,7 @@ func (h *Handle) CreateBook() gin.HandlerFunc {
 			})
 			return
 		}
-		ok, err := h.store.IsBookInStore(*book.Title, *book.Author)
+		ok, err := h.storeBK.IsBookInStore(*book.Title, *book.Author)
 		if err != nil {
 			h.Logger.Info("Error validating book name", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
@@ -76,7 +157,7 @@ func (h *Handle) CreateBook() gin.HandlerFunc {
 			return
 		}
 
-		newBook, err := h.store.AddBook(book)
+		newBook, err := h.storeBK.AddBook(book)
 		if err != nil {
 			log.Println(err)
 			c.JSON(500, utils.ErrorResponse{
@@ -104,7 +185,7 @@ func (h *Handle) GetBook() gin.HandlerFunc {
 
 		//objectId, _ := utils.GetPrimitiveObjectId(bookId)
 
-		book, err := h.store.GetBook(bookId)
+		book, err := h.storeBK.GetBook(bookId)
 		if err != nil {
 			h.Logger.Info("Error getting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
@@ -150,7 +231,7 @@ func (h *Handle) UpdateBook() gin.HandlerFunc {
 		}
 
 		//objectId, _ := utils.GetPrimitiveObjectId(bookId)
-		_, err = h.store.UpdateBook(bookId, &book)
+		_, err = h.storeBK.UpdateBook(bookId, &book)
 		if err != nil {
 			h.Logger.Info("Error updating book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
@@ -160,7 +241,7 @@ func (h *Handle) UpdateBook() gin.HandlerFunc {
 			})
 			return
 		}
-		updatedBook, errStr := h.store.GetBook(bookId)
+		updatedBook, errStr := h.storeBK.GetBook(bookId)
 		if errStr != nil {
 			h.Logger.Info("Error getting book", zap.Error(errStr))
 			c.JSON(500, utils.ErrorResponse{
@@ -181,7 +262,7 @@ func (h *Handle) UpdateBook() gin.HandlerFunc {
 
 func (h *Handle) GetAllBooks() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		books, err := h.store.GetAllBooks()
+		books, err := h.storeBK.GetAllBooks()
 		if err != nil {
 			h.Logger.Info("Error getting all books", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
@@ -206,7 +287,7 @@ func (h *Handle) DeleteBook() gin.HandlerFunc {
 		bookId := c.Param("_id")
 
 		//objectId, _ := utils.GetPrimitiveObjectId(bookId)
-		book, err := h.store.GetBook(bookId)
+		book, err := h.storeBK.GetBook(bookId)
 		if err != nil {
 			h.Logger.Info("Error getting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
@@ -216,7 +297,7 @@ func (h *Handle) DeleteBook() gin.HandlerFunc {
 			})
 			return
 		}
-		err2 := h.store.DeleteBook(bookId)
+		err2 := h.storeBK.DeleteBook(bookId)
 		if err2 != nil {
 			h.Logger.Info("Error deleting book", zap.Error(err))
 			c.JSON(500, utils.ErrorResponse{
