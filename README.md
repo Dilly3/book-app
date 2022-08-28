@@ -1,3 +1,3 @@
-# A book store application with Golang, Gin and MongoDb
+# A book library application with Golang, Gin and MongoDb
 # CRUD Restful API with hexagonal architecture
 
