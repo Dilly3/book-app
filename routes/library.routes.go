@@ -295,7 +295,8 @@ func (h *Handle) CreateBook() gin.HandlerFunc {
 			})
 			return
 		}
-
+		book.Status = models.AVAILABLE
+		book.RentedBy = &models.UserInfo{}
 		newBook, err := h.storeBK.AddBook(book)
 		if err != nil {
 			log.Println(err)

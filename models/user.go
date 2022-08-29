@@ -18,6 +18,12 @@ type User struct {
 	DeletedAt time.Time `json:"deleted_at" bson:"deleted_at"`
 }
 
+type UserInfo struct {
+	ID       string `json:"_id"  bson:"_id"`
+	UserName string `json:"username" bson:"username"`
+	Email    string `json:"email" bson:"email"`
+}
+
 type JWTClaims struct {
 	*jwt.RegisteredClaims
 	ID    string `json:"id"`
