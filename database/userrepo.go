@@ -2,15 +2,18 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/dilly3/book-rental/models"
-	utils "github.com/dilly3/book-rental/utils"
+	"github.com/dilly3/library-manager/models"
+	utils "github.com/dilly3/library-manager/utils"
 	"github.com/go-playground/validator"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoUSR struct {
@@ -21,6 +24,28 @@ type MongoUSR struct {
 
 func (m MongoUSR) colUSR() *mongo.Collection {
 	return m.Client.Database("bookDB").Collection(models.USER_COLLECTION)
+}
+func MongoDBUSRinstance() *mongo.Client {
+
+	MongoDB := os.Getenv("MONGODBUSR_URL")
+	if MongoDB == "" || len(MongoDB) < 1 {
+		MongoDB = "mongodb://localhost:27017/userdb"
+	}
+	client, err := mongo.NewClient(options.Client().ApplyURI(MongoDB))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDBUSR")
+	return client
 }
 func (m MongoUSR) CheckUserByEmail(email string) bool {
 
@@ -37,6 +62,21 @@ func (m MongoUSR) CheckUserByEmail(email string) bool {
 		return true
 	}
 	return false
+}
+func (m MongoUSR) GetUserByEmail(email string) (*models.User, error) {
+	var user = &models.User{}
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+	filter := bson.M{
+		"email": email,
+	}
+	err := m.colUSR().FindOne(ctx, filter).Decode(user)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (m MongoUSR) CreateUser(user *models.User) (*models.User, error) {

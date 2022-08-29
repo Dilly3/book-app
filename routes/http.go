@@ -3,17 +3,17 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
+
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	utils "github.com/dilly3/book-rental/utils"
+	utils "github.com/dilly3/library-manager/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv"
 )
 
 func MountGinHandler(handler *Handle) *gin.Engine {
@@ -29,13 +29,14 @@ func MountGinHandler(handler *Handle) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	router.POST("/books/createbook", handler.CreateBook())
-	router.GET("/books/getbook/:book_id", handler.GetBook())
-	router.PATCH("/books/editbook/:book_id", handler.UpdateBook())
-	router.GET("/books/getallbooks", handler.GetAllBooks())
+	router.POST("/admin/addbook", handler.CreateBook())
+	router.GET("/admin/getbook/:book_id", handler.GetBook())
+	router.PATCH("/admin/editbook/:book_id", handler.UpdateBook())
+	router.GET("/user/getallbooks", handler.GetAllBooks())
 	router.GET("/", handler.Home())
-	router.DELETE("/books/deletebook/:_id", handler.DeleteBook())
-	router.POST("/books/signup", handler.UserSignUp())
+	router.DELETE("/admin/deletebook/:_id", handler.DeleteBook())
+	router.POST("/user/signup", handler.UserSignUp())
+	router.POST("/user/signin", handler.UserLogin())
 
 	return router
 }

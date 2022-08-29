@@ -2,19 +2,20 @@ package database
 
 import "github.com/go-playground/validator"
 
-var Mongo = MongoDBinstance()
+var mongoBK = MongoDBBKinstance()
+var mongoUSR = MongoDBUSRinstance()
 var Validate = validator.New()
 
 func NewMongoBK() DataStore {
 	return &MongoBK{
 		Validate: Validate,
-		Client:   Mongo,
+		Client:   mongoBK,
 	}
 }
 
 func NewMongoUSR() UserStore {
 	return &MongoUSR{
 		Validate: Validate,
-		Client:   Mongo,
+		Client:   mongoUSR,
 	}
 }
