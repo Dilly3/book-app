@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/dilly3/book-rental/models"
+	"github.com/dilly3/library-manager/models"
 	_ "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -17,4 +17,5 @@ type DataStore interface {
 type UserStore interface {
 	CheckUserByEmail(email string) bool
 	CreateUser(user *models.User) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
 }

@@ -9,10 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv"
 
-	"github.com/dilly3/book-rental/models"
-	utils "github.com/dilly3/book-rental/utils"
+	"github.com/dilly3/library-manager/models"
+	utils "github.com/dilly3/library-manager/utils"
 	"github.com/go-playground/validator"
 	"go.mongodb.org/mongo-driver/bson"
 	_ "go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,16 +26,13 @@ type MongoBK struct {
 	RWMutex  *sync.RWMutex
 }
 
-func (m MongoBK) col() *mongo.Collection {
-	return m.Client.Database("bookDB").Collection(models.BOOK_COLLECTION)
-}
 func (m MongoBK) colBK() *mongo.Collection {
 	return m.Client.Database("bookDB").Collection(models.BOOK_COLLECTION)
 }
 
-func MongoDBinstance() *mongo.Client {
+func MongoDBBKinstance() *mongo.Client {
 
-	MongoDB := os.Getenv("MONGODB_URL")
+	MongoDB := os.Getenv("MONGODBBK_URL")
 	if MongoDB == "" || len(MongoDB) < 1 {
 		MongoDB = "mongodb://localhost:27017/bookDb"
 	}
@@ -52,7 +49,7 @@ func MongoDBinstance() *mongo.Client {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to MongoDB")
+	fmt.Println("Connected to MongoDBBK")
 	return client
 }
 
