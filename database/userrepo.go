@@ -23,7 +23,7 @@ type MongoUSR struct {
 }
 
 func (m MongoUSR) colUSR() *mongo.Collection {
-	return m.Client.Database("bookDB").Collection(models.USER_COLLECTION)
+	return m.Client.Database("userDB").Collection(models.USER_COLLECTION)
 }
 func MongoDBUSRinstance() *mongo.Client {
 
