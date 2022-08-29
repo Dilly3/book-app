@@ -43,7 +43,7 @@ func GenToken(u *UserClaims) (*string, error) {
 func ParseToken(tokenString string) (*UserClaims, error) {
 	var JWT_SECRET = os.Getenv("JWT_SECRET")
 	if JWT_SECRET == "" || len(JWT_SECRET) < 1 {
-		JWT_SECRET = "TellNoOneOfWhatYouKnowOrYouWontKnowAgain"
+		JWT_SECRET = "TellSomeOneOfWhatYouKnowOrYouWontKnowAgain!!!!!!!!"
 	}
 	token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(JWT_SECRET), nil
