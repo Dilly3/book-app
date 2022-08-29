@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/dilly3/book-rental/database"
-	"github.com/dilly3/book-rental/routes"
+	"github.com/dilly3/library-manager/database"
+	"github.com/dilly3/library-manager/routes"
 	"github.com/joho/godotenv"
 )
 

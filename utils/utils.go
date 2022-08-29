@@ -8,8 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/dilly3/book-rental/models"
+	"github.com/dilly3/library-manager/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 	bcrypto "golang.org/x/crypto/bcrypt"
 )
 
@@ -39,7 +40,7 @@ func GetPortFromEnv() string {
 	return port
 }
 func GenerateRandomID() string {
-	b := make([]byte, 9)
+	b := make([]byte, 6)
 
 	_, err := rand.Read(b)
 	if err != nil {
@@ -86,4 +87,9 @@ func EncryptPassword(password *string) *string {
 	pass := string(byte)
 	return &pass
 
+}
+
+func ComparePasscode(passcode, hashedPasscode string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPasscode), []byte(passcode))
+	return err == nil
 }

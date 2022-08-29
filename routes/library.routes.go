@@ -7,11 +7,16 @@ import (
 	"io"
 	"log"
 	"net/http"
+	_ "os"
+	"strings"
+	"time"
 
-	"github.com/dilly3/book-rental/database"
-	"github.com/dilly3/book-rental/models"
-	utils "github.com/dilly3/book-rental/utils"
+	jwtauth "github.com/dilly3/library-manager/auth"
+	"github.com/dilly3/library-manager/database"
+	"github.com/dilly3/library-manager/models"
+	utils "github.com/dilly3/library-manager/utils"
 	"github.com/gin-gonic/gin"
+	_ "github.com/golang-jwt/jwt"
 	"go.uber.org/zap"
 )
 
@@ -113,8 +118,142 @@ func (h *Handle) UserSignUp() gin.HandlerFunc {
 	}
 }
 
+func (h *Handle) UserLogin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			errorMessage := "error reading request body"
+			h.Logger.Fatal(errorMessage, zap.Error(err))
+			c.JSON(http.StatusBadRequest, utils.ErrorResponse{
+				Code:    http.StatusBadRequest,
+				Error:   fmt.Sprintf("%s", errors.New(errorMessage)),
+				Message: errorMessage,
+			})
+			return
+		}
+		defer c.Request.Body.Close()
+
+		var user models.User
+		err = json.Unmarshal(body, &user)
+		if err != nil {
+			errorMessage := "failed to unmarshall user login object"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusBadRequest, utils.ErrorResponse{
+				Code:    http.StatusBadRequest,
+				Error:   fmt.Sprintf("%s", errors.New(errorMessage)),
+				Message: errorMessage,
+			})
+			return
+		}
+
+		if user.Email == "" || user.Password == nil {
+			errorMessage := "empty request object"
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusBadRequest,
+				Error:   fmt.Sprintf("%s\n", errors.New(errorMessage)),
+				Message: errorMessage,
+			})
+			return
+
+		}
+		userData, err := h.storeUSR.GetUserByEmail(user.Email)
+		if err != nil {
+			errorMessage := "error getting user by email"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusForbidden,
+				Error:   fmt.Sprintf("%s\n", errors.New(errorMessage)),
+				Message: "user does not exist",
+			})
+			return
+		}
+
+		passwordMatch := utils.ComparePasscode(*user.Password, *userData.Password)
+		if !passwordMatch {
+			errorMessage := "invalid login credentials"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusForbidden,
+				Error:   fmt.Sprintf("%s\n", errors.New(errorMessage)),
+				Message: "invalid login credentials",
+			})
+			return
+		}
+
+		claims := &jwtauth.UserClaims{
+			Name:      userData.ID,
+			Email:     userData.Email,
+			Role:      userData.Role,
+			SessionID: 1,
+			ExpireAt:  time.Now().Add(time.Hour * 24).Unix(),
+		}
+
+		tokenString, err := jwtauth.GenToken(claims)
+		if err != nil {
+			errorMessage := "error creating token"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusOK, utils.ErrorResponse{
+				Code:    http.StatusInternalServerError,
+				Error:   errorMessage,
+				Message: fmt.Sprintf("%s\n", errors.New(errorMessage)),
+			})
+			return
+
+		}
+
+		time.Sleep(time.Millisecond * 500)
+
+		c.SetCookie("jwt", *tokenString, 3600, "/", "", false, true)
+
+		c.JSON(http.StatusOK, utils.SuccessResponse{
+			Code:    http.StatusOK,
+			Object:  tokenString,
+			Message: "User logged in successfully",
+		})
+	}
+}
+
 func (h *Handle) CreateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		reqToken := c.GetHeader("Authorization")
+		splitToken := strings.Split(reqToken, "Bearer")
+
+		if len(splitToken) != 2 || len(splitToken[1]) < 1 {
+			errorMessage := "error getting authorization token"
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+
+		reqToken = strings.TrimSpace(splitToken[1])
+
+		//token clamins contains user email
+		claims, err := jwtauth.ParseToken(reqToken)
+
+		if err != nil {
+			errorMessage := "error validating token string"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+
+		if claims.Role != models.ADMIN_USER {
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   "unauthorized",
+				Message: "unauthorized",
+			})
+			return
+		}
+
 		var book = new(models.Book)
 		body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(models.MAX_SIZE)))
 		if err != nil {
@@ -207,6 +346,43 @@ func (h *Handle) GetBook() gin.HandlerFunc {
 func (h *Handle) UpdateBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
+		reqToken := c.GetHeader("Authorization")
+		splitToken := strings.Split(reqToken, "Bearer")
+
+		if len(splitToken) != 2 || len(splitToken[1]) < 1 {
+			errorMessage := "error getting authorization token"
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+
+		reqToken = strings.TrimSpace(splitToken[1])
+
+		claims, err := jwtauth.ParseToken(reqToken)
+
+		if err != nil {
+			errorMessage := "error validating token string"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+
+		if claims.Role != models.ADMIN_USER {
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   "unauthorized",
+				Message: "unauthorized",
+			})
+			return
+		}
+
 		bookId := c.Param("book_id")
 		var book models.Book
 		body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(models.MAX_SIZE)))
@@ -283,6 +459,44 @@ func (h *Handle) GetAllBooks() gin.HandlerFunc {
 
 func (h *Handle) DeleteBook() gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		reqToken := c.GetHeader("Authorization")
+		splitToken := strings.Split(reqToken, "Bearer")
+
+		if len(splitToken) != 2 || len(splitToken[1]) < 1 {
+			errorMessage := "error getting authorization token"
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+
+		reqToken = strings.TrimSpace(splitToken[1])
+
+		//token clamins contains user email
+		claims, err := jwtauth.ParseToken(reqToken)
+
+		if err != nil {
+			errorMessage := "error validating token string"
+			h.Logger.Error(errorMessage, zap.Error(err))
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   errorMessage,
+				Message: errorMessage,
+			})
+			return
+		}
+
+		if claims.Role != models.ADMIN_USER {
+			c.JSON(http.StatusUnauthorized, utils.ErrorResponse{
+				Code:    http.StatusUnauthorized,
+				Error:   "unauthorized",
+				Message: "unauthorized",
+			})
+			return
+		}
 
 		bookId := c.Param("_id")
 
